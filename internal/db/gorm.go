@@ -1,4 +1,4 @@
-package internal
+package db
 
 import (
 	"github.com/google/uuid"
@@ -32,13 +32,13 @@ func NewDB() *gorm.DB {
 }
 
 type Base struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primary_key" json:"id"`
-	CreatedAt time.Time  `gorm:"type:timestamp;not null" json:"created_at"`
-	UpdatedAt *time.Time `gorm:"type:timestamp;null" json:"updated_at"`
-	DeletedAt *time.Time `gorm:"index,null" json:"deleted_at"`
+	Id        uuid.UUID      `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time      `gorm:"default:CURRENT_TIMESTAMP;not null" json:"created_at"`
+	UpdatedAt *time.Time     `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 func (base *Base) BeforeCreate(tx *gorm.DB) error {
-	base.ID = uuid.New()
+	base.Id = uuid.New()
 	return nil
 }

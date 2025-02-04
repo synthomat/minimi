@@ -1,0 +1,36 @@
+package internal
+
+templ MainMenu(auth *interface{}) {
+	<div class="ms-menu">
+		<div class="ms-menu-logo">
+			<img src="https://minstyle.io/img/logo.png"/>
+		</div>
+
+		if (ctx.Value("authed") != nil) {
+		<nav class="ms-menu-link">
+			<input type="checkbox" id="ms-menu-toggle"/>
+			<label for="ms-menu-toggle" class="ms-menu-icon"><i class="fa fa-bars"></i></label>
+			<ul>
+				<li><a href="/a/">Overview</a></li>
+				<li><a href="/a/settings">Settings</a></li>
+				<li><input type="text" placeholder="search" name="" id=""/></li>
+			</ul>
+		</nav>
+		}
+	</div>
+}
+
+templ Layout() {
+	<html>
+		<head>
+			<link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+			<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/minstyle.io@2.0.2/dist/css/minstyle.io.min.css"/>
+		</head>
+		<body>
+			@MainMenu(nil)
+			<div class="container">
+				{ children... }
+			</div>
+		</body>
+	</html>
+}

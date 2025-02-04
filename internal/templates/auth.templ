@@ -1,0 +1,21 @@
+package internal
+
+templ Login(next string) {
+    @Layout() {
+    <h1>Login</h1>
+    <div class="content_code">
+        <form action="" method="post">
+            <input type="text" name="next" value={ next }/>
+            <div class="row">
+                <div class="col-sm">
+                    <div class="ms-form-group">
+                        <label for="Login">Login</label>
+                        <input type="password" name="password" placeholder="Login" id="Login"/>
+                    </div>
+                </div>
+                <div><button class="ms-btn ms-primary">Login</button></div>
+            </div>
+        </form>
+    </div>
+    }
+}

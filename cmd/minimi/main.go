@@ -2,11 +2,11 @@ package main
 
 import (
 	"synthomat/minimi/internal"
+	"synthomat/minimi/internal/db"
 )
 
 func main() {
-	db := internal.NewDB()
+	db := db.NewDB()
 
 	internal.RunServer(db)
-
 }

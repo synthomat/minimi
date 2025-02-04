@@ -1,0 +1,71 @@
+package internal
+
+import (
+	"fmt"
+	"synthomat/minimi/internal/db"
+)
+
+
+templ NewLinkLayout() {
+	@Layout() {
+		<h3>New Link</h3>
+		<form action="" method="POST">
+			Slug: <input type="type" name="slug"/>
+			<br/>
+			URL: <input type="url" name="url"/>
+			<br/>
+			<input type="submit"/> or <a href="/">cancel</a>
+		</form>
+		{ children... }
+	}
+}
+
+templ EditLinkLayout(link db.Link) {
+	@Layout() {
+		<h3>Edit Link</h3>
+		<form action="" method="POST">
+			Slug: <input type="type" name="slug" value={ link.Slug } />
+			<br/>
+			URL: <input type="url" name="url" value={ link.OriginalUrl }/>
+			<br/>
+			<input type="submit"/> or <a href="/">cancel</a>
+		</form>
+		{ children... }
+	}
+}
+
+templ Hello(name string) {
+	<div>Hello, { name }</div>
+}
+
+templ Links(links []db.Link) {
+	@Layout() {
+		<div class="row">
+            <div class="col-sm"><h2>Links</h2></div>
+            <div class="col-sm"><a href="/a/links/new" class="ms-btn">Create new</a></div>
+          </div>
+
+		<table class="ms-table">
+			<thead>
+				<tr>
+					<th>URL</th>
+					<th>Slug</th>
+					<th>Landing</th>
+					<th>Created At</th>
+					<th>Action</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, link := range links {
+					<tr>
+						<td><a href={ templ.URL(link.OriginalUrl) }>{ link.OriginalUrl }</a></td>
+						<td><a href={ templ.URL("/" + link.Slug) }>{ link.Slug }</a></td>
+						<td></td>
+						<td><span title={ link.CreatedAt.Format("2006-01-02 15:04:05") }>{ link.CreatedAt.Format("2006-01-02") }</span></td>
+						<td><a href={ templ.URL(fmt.Sprintf("/a/links/%s/edit", link.Id)) }>edit</a></td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+}

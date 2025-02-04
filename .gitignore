@@ -1,2 +1,4 @@
 .idea/
 *.db
+internal/templates/*.txt
+internal/templates/*.go
