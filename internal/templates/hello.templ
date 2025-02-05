@@ -5,30 +5,43 @@ import (
 	"synthomat/minimi/internal/db"
 )
 
-
 templ NewLinkLayout() {
 	@Layout() {
 		<h3>New Link</h3>
 		<form action="" method="POST">
-			Slug: <input type="type" name="slug"/>
-			<br/>
-			URL: <input type="url" name="url"/>
-			<br/>
-			<input type="submit"/> or <a href="/">cancel</a>
+			<div class="ms-form-group">
+				<label for="slug">Slug</label>
+				<input type="text" name="slug" placeholder="Slug" id="slug"/>
+			</div>
+			<div class="ms-form-group">
+				<label for="url">URL</label>
+				<input type="text" name="url" placeholder="Target URL" id="url"/>
+			</div>
+			<div>
+				<input class="ms-btn ms-primary" type="submit" value="create"/> or <a href="/a/">cancel</a>
+			</div>
 		</form>
 		{ children... }
 	}
 }
 
-templ EditLinkLayout(link db.Link) {
+templ EditLinkLayout(link db.Link, errors map[string]string) {
 	@Layout() {
 		<h3>Edit Link</h3>
 		<form action="" method="POST">
-			Slug: <input type="type" name="slug" value={ link.Slug } />
-			<br/>
-			URL: <input type="url" name="url" value={ link.OriginalUrl }/>
-			<br/>
-			<input type="submit"/> or <a href="/">cancel</a>
+			<div class="ms-form-group">
+				<label for="slug">Slug</label>
+				<input type="text" name="slug" placeholder="Slug" id="slug" value={ link.Slug } />
+				<span class="ms-under-input ms-text-primary">{ errors["slug"] }</span>
+			</div>
+			<div class="ms-form-group">
+				<label for="url">URL</label>
+				<input type="text" name="url" placeholder="Target URL" id="url"  value={ link.OriginalUrl } />
+				<span class="ms-under-input ms-text-primary">{ errors["url"] }</span>
+			</div>
+			<div>
+				<input class="ms-btn ms-primary" type="submit" value="update"/> or <a href="/a/">cancel</a>
+			</div>
 		</form>
 		{ children... }
 	}
@@ -41,10 +54,9 @@ templ Hello(name string) {
 templ Links(links []db.Link) {
 	@Layout() {
 		<div class="row">
-            <div class="col-sm"><h2>Links</h2></div>
-            <div class="col-sm"><a href="/a/links/new" class="ms-btn">Create new</a></div>
-          </div>
-
+			<div class="col-sm"><h2>Links</h2></div>
+			<div class="col-sm"><a href="/a/links/new" class="ms-btn">Create new</a></div>
+		</div>
 		<table class="ms-table">
 			<thead>
 				<tr>
@@ -59,7 +71,7 @@ templ Links(links []db.Link) {
 				for _, link := range links {
 					<tr>
 						<td><a href={ templ.URL(link.OriginalUrl) }>{ link.OriginalUrl }</a></td>
-						<td><a href={ templ.URL("/" + link.Slug) }>{ link.Slug }</a></td>
+						<td><a href={ templ.URL("/" + link.Slug) } target="_blank">{ link.Slug }</a></td>
 						<td></td>
 						<td><span title={ link.CreatedAt.Format("2006-01-02 15:04:05") }>{ link.CreatedAt.Format("2006-01-02") }</span></td>
 						<td><a href={ templ.URL(fmt.Sprintf("/a/links/%s/edit", link.Id)) }>edit</a></td>

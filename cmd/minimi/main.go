@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	db := db.NewDB()
+	gdb := db.NewDB()
 
-	internal.RunServer(db)
+	internal.RunServer(gdb)
 }
