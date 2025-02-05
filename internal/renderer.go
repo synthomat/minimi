@@ -24,30 +24,30 @@ func (r *HTMLTemplRenderer) Instance(s string, d any) render.Render {
 	}
 	return &Renderer{
 		Ctx:       context.Background().(*gin.Context),
-		Status:    -1,
 		Component: templData,
 	}
 }
 
-func New(ctx *gin.Context, status int, component templ.Component) *Renderer {
+func New(ctx *gin.Context, component templ.Component) *Renderer {
 	return &Renderer{
 		Ctx:       ctx,
-		Status:    status,
 		Component: component,
 	}
 }
 
 type Renderer struct {
 	Ctx       *gin.Context
-	Status    int
 	Component templ.Component
 }
 
 func (t Renderer) Render(w http.ResponseWriter) error {
 	t.WriteContentType(w)
-	if t.Status != -1 {
-		w.WriteHeader(t.Status)
-	}
+	/*
+		if t.Status != -1 {
+			w.WriteHeader(t.Status)
+		}
+
+	*/
 	if t.Component != nil {
 		return t.Component.Render(t.Ctx, w)
 	}

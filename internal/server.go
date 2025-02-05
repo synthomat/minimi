@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -10,6 +9,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"net/http"
 	"strings"
@@ -37,7 +37,6 @@ func AuthMiddleware() gin.HandlerFunc {
 // Will change it later
 // INSECURE // INSECURE // INSECURE // INSECURE // INSECURE // INSECURE // INSECURE // INSECURE // INSECURE // INSECURE
 var (
-	SESS_SECRET = "sessionsecret"
 	AUTH_SECRET = "abcde"
 )
 
@@ -46,30 +45,15 @@ type LinkDto struct {
 	Url  string `form:"url" binding:"required,url"`
 }
 
-func ValidationErrorToText(e validator.FieldError) string {
-
-	switch e.Tag() {
-	case "required":
-		return fmt.Sprintf("%s is required", e.Field)
-	case "max":
-		return fmt.Sprintf("%s cannot be longer than %s", e.Field, e.Param)
-	case "min":
-		return fmt.Sprintf("%s must be longer than %s", e.Field, e.Param)
-	case "email":
-		return fmt.Sprintf("Invalid email format")
-	case "len":
-		return fmt.Sprintf("%s must be %s characters long", e.Field, e.Param)
-	}
-	return fmt.Sprintf("%s is not valid", e.Field)
-}
-
 func RunServer(gdb *gorm.DB) {
 	server := gin.Default()
-	store := cookie.NewStore([]byte(SESS_SECRET))
-	server.Use(sessions.Sessions("mysession", store))
+	sessSecret, _ := uuid.NewRandom()
 
-	en := en.New()
-	uni := ut.New(en, en)
+	store := cookie.NewStore([]byte(sessSecret.String()[:32]))
+	server.Use(sessions.Sessions("sess", store))
+
+	enLang := en.New()
+	uni := ut.New(enLang)
 	trans, _ := uni.GetTranslator("en")
 
 	b, _ := binding.Validator.Engine().(*validator.Validate)
@@ -77,7 +61,9 @@ func RunServer(gdb *gorm.DB) {
 
 	ginHtmlRenderer := server.HTMLRender
 	server.HTMLRender = &HTMLTemplRenderer{FallbackHtmlRenderer: ginHtmlRenderer}
-
+	server.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusPermanentRedirect, "/a/")
+	})
 	server.GET("/:slug", func(c *gin.Context) {
 		slugName := c.Param("slug")
 
@@ -97,7 +83,7 @@ func RunServer(gdb *gorm.DB) {
 			next := c.Query("next")
 
 			if c.Request.Method != http.MethodPost {
-				r := New(c, http.StatusOK, internal.Login(next))
+				r := New(c, internal.Login(next))
 				c.Render(http.StatusOK, r)
 				return
 			}
@@ -121,8 +107,17 @@ func RunServer(gdb *gorm.DB) {
 				return
 			}
 
-			r := New(c, http.StatusOK, internal.Login(next))
+			r := New(c, internal.Login(next))
 			c.Render(http.StatusOK, r)
+		})
+
+		authGroup.POST("/logout", func(c *gin.Context) {
+			session := sessions.Default(c)
+			session.Clear()
+			session.Options(sessions.Options{Path: "/", MaxAge: -1})
+			session.Save()
+
+			c.Redirect(http.StatusFound, "/a/")
 		})
 	}
 
@@ -133,7 +128,7 @@ func RunServer(gdb *gorm.DB) {
 			var links []db.Link
 			gdb.Order("slug asc, created_at asc").Find(&links)
 
-			r := New(c, http.StatusOK, internal.Links(links))
+			r := New(c, internal.Links(links))
 			c.Render(http.StatusOK, r)
 		})
 
@@ -153,7 +148,7 @@ func RunServer(gdb *gorm.DB) {
 				return
 			}
 
-			r := New(c, http.StatusOK, internal.NewLinkLayout())
+			r := New(c, internal.NewLinkLayout())
 			c.Render(http.StatusOK, r)
 		})
 
@@ -163,7 +158,7 @@ func RunServer(gdb *gorm.DB) {
 			link, _ := db.LinkById(gdb, linkId)
 
 			if c.Request.Method != http.MethodPost {
-				r := New(c, http.StatusOK, internal.EditLinkLayout(*link, nil))
+				r := New(c, internal.EditLinkLayout(*link, nil))
 				c.Render(http.StatusOK, r)
 				return
 			}
@@ -178,7 +173,7 @@ func RunServer(gdb *gorm.DB) {
 					errors[strings.ToLower(v.Field())] = v.Translate(trans)
 				}
 
-				r := New(c, http.StatusOK, internal.EditLinkLayout(*link, errors))
+				r := New(c, internal.EditLinkLayout(*link, errors))
 				c.Render(http.StatusOK, r)
 				return
 			}
@@ -187,7 +182,7 @@ func RunServer(gdb *gorm.DB) {
 			link.OriginalUrl = linkDto.Url
 
 			if err := gdb.Save(&link).Error; err != nil {
-				r := New(c, http.StatusOK, internal.EditLinkLayout(*link, nil))
+				r := New(c, internal.EditLinkLayout(*link, nil))
 				c.Render(http.StatusOK, r)
 				return
 			}
