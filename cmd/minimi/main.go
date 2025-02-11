@@ -1,12 +1,20 @@
 package main
 
 import (
+	"log"
 	"synthomat/minimi/internal"
 	"synthomat/minimi/internal/db"
 )
 
 func main() {
-	gdb := db.NewDB()
+	baseConfig := internal.NewDefaultConfig()
 
-	internal.RunServer(gdb)
+	if baseConfig.AutoSecret {
+		log.Printf("Using generated password: %s", baseConfig.AuthSecret)
+	}
+
+	gdb := db.NewDB(baseConfig.DBFileName)
+
+	server := internal.NewServer(baseConfig)
+	server.RunServer()
 }

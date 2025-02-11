@@ -42,3 +42,9 @@ func LinkById(db *gorm.DB, id string) (*Link, error) {
 
 	return &link, nil
 }
+
+type Setting struct {
+	Base
+	Key   string `gorm:"unique"`
+	Value string
+}

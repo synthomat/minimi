@@ -9,6 +9,7 @@ import (
 
 var modelsToMigrate = []interface{}{
 	&Link{},
+	&Setting{},
 }
 
 func runMigrations(db *gorm.DB, models []interface{}) {
@@ -19,8 +20,8 @@ func runMigrations(db *gorm.DB, models []interface{}) {
 	}
 }
 
-func NewDB() *gorm.DB {
-	db, err := gorm.Open(sqlite.Open("minimi.db"), &gorm.Config{})
+func NewDB(fileName string) *gorm.DB {
+	db, err := gorm.Open(sqlite.Open(fileName), &gorm.Config{})
 
 	if err != nil {
 		panic("failed to connect database: " + err.Error())

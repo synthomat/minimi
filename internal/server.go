@@ -9,7 +9,6 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"net/http"
 	"strings"
@@ -40,17 +39,47 @@ var (
 	AUTH_SECRET = "abcde"
 )
 
+type AuthService struct {
+	Db *gorm.DB
+}
+
+func NewAuthService(db *gorm.DB) *AuthService {
+	return &AuthService{Db: db}
+}
+
+func (s *AuthService) CheckCredentials(secret string) bool {
+	return secret == AUTH_SECRET
+}
+
 type LinkDto struct {
 	Slug string `form:"slug" binding:"required,alphanum,min=3,max=20"`
 	Url  string `form:"url" binding:"required,url"`
 }
 
-func RunServer(gdb *gorm.DB) {
-	server := gin.Default()
-	sessSecret, _ := uuid.NewRandom()
+func NewSessionMiddleware(getSessionSecret func() string) gin.HandlerFunc {
+	secret := getSessionSecret()
+	store := cookie.NewStore([]byte(secret))
+	return sessions.Sessions("sess", store)
+}
 
-	store := cookie.NewStore([]byte(sessSecret.String()[:32]))
-	server.Use(sessions.Sessions("sess", store))
+type Server struct {
+	gdb *gorm.DB
+}
+
+func (s *Server) RunServer() {
+	gdb := s.gdb
+
+	server := gin.Default()
+
+	authService := NewAuthService(gdb)
+
+	sessionMiddleware := NewSessionMiddleware(func() string {
+		var sessionSecret = db.Setting{Key: "sessionkey"}
+		gdb.First(&sessionSecret)
+		return sessionSecret.Value
+	})
+
+	server.Use(sessionMiddleware)
 
 	enLang := en.New()
 	uni := ut.New(enLang)
@@ -61,6 +90,7 @@ func RunServer(gdb *gorm.DB) {
 
 	ginHtmlRenderer := server.HTMLRender
 	server.HTMLRender = &HTMLTemplRenderer{FallbackHtmlRenderer: ginHtmlRenderer}
+
 	server.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusPermanentRedirect, "/a/")
 	})
@@ -90,7 +120,7 @@ func RunServer(gdb *gorm.DB) {
 
 			password := c.PostForm("password")
 
-			if password == AUTH_SECRET {
+			if authService.CheckCredentials(s.password) {
 				session := sessions.Default(c)
 				session.Set("authed", true)
 				err := session.Save()
